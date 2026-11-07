@@ -98,8 +98,9 @@ Le gestionnaire crée les filières, niveaux et matières, puis préautorise les
 
 Les imports CSV/XLSX sont réservés aux gestionnaires, transactionnels (tout ou rien), limités à 5 Mo et 5 000 lignes ; les formules et cellules fusionnées Excel sont refusées. Les archives Excel sont également contrôlées après décompression. Utiliser la première feuille avec ces en-têtes :
 
-- Filières et matières : `code,name`
-- Niveaux : `code,name,sortOrder` (ordre facultatif)
+- Filières : `code,name`
+- Matières : `code,name,filiereIds` (identifiants de filières séparés par `|`)
+- Niveaux : `code,name`
 - Étudiants : `matricule,firstName,lastName,filiereId,niveauId,isEligible` (statut facultatif ; true/false)
 
 Les identifiants nécessaires à l'import des étudiants sont affichés dans les listes de filières et niveaux. Les codes, matricules et e-mails sont uniques. La suppression d'une donnée utilisée est bloquée.
@@ -124,9 +125,9 @@ Les tests backend utilisent une base simulée ; ils ne remplacent pas des tests 
 
 - **Un matricule seul ne prouve pas l'identité.** Quelqu'un connaissant celui d'un autre étudiant peut s'inscrire à sa place. Ajouter une vérification via le SSO universitaire ou une adresse institutionnelle vérifiée avant de rendre le service public.
 - Mettre en place HTTPS, une politique de sécurité navigateur, une analyse antivirus des PDF, des sauvegardes, un journal d'audit et une supervision. Les JWT restent en sessionStorage : une protection XSS est indispensable. La limitation des tentatives est en mémoire, par instance ; utiliser un stockage partagé et une limitation réseau pour plusieurs instances.
-- Les imports de documents non fiables doivent être isolés et surveillés malgré les contrôles de taille. Les niveaux et matières ne sont pas liés à une filière dans le modèle validé ; chaque document, lui, est lié à une seule filière.
+- Les imports de documents non fiables doivent être isolés et surveillés malgré les contrôles de taille. Un document est lié à une matière et à un niveau indicatif, et accessible à toutes les filières associées à la matière ; le niveau permet de filtrer sans restreindre l’accès ; modifier ces associations change immédiatement l’accès à tous les documents de cette matière.
 - Réaliser des tests réels avec PostgreSQL et SMTP et vérifier régulièrement `npm audit` (y compris les dépendances de développement) avant mise en production.
 
-### Mise à niveau des matières
+### Mise à niveau des documents et matières
 
-La nouvelle association entre matières et filières nécessite une évolution du schéma et la reprise des associations des documents existants. Sauvegardez d’abord la base et suivez la procédure « Mise à niveau : matières et filières » dans `backend/README.md`. N’acceptez jamais une réinitialisation de la base existante. La pagination actuelle est réalisée côté navigateur après récupération des données.
+Le partage des documents par matière nécessite une évolution du schéma. Tous les documents existants deviennent accessibles à toutes les filières associées à leur matière : vérifiez ce partage avant de rouvrir l’accès. Sauvegardez d’abord la base et suivez la procédure « Mise à niveau : matières et filières » dans `backend/README.md`. N’acceptez jamais une réinitialisation de la base existante. La pagination actuelle est réalisée côté navigateur après récupération des données.

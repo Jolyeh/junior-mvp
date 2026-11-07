@@ -98,19 +98,22 @@ model Document {
   storageKey   String   @unique
   mimeType     String   @db.VarChar(255)
   sizeBytes    BigInt
-  filiereId    String
-  niveauId     String
+  // Ancienne filière conservée pour la reprise ; les nouveaux documents ne la renseignent pas.
+  filiereId    String?
+  // Facultatif en base pour préserver les éventuels documents sans niveau ; requis à l’ajout.
+  niveauId     String?
   matiereId    String
   uploadedById String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  filiere    Filiere @relation(fields: [filiereId], references: [id], onDelete: Restrict)
-  niveau     Niveau  @relation(fields: [niveauId], references: [id], onDelete: Restrict)
+  filiere    Filiere? @relation(fields: [filiereId], references: [id], onDelete: SetNull)
+  niveau     Niveau?  @relation(fields: [niveauId], references: [id], onDelete: Restrict)
   matiere    Matiere @relation(fields: [matiereId], references: [id], onDelete: Restrict)
   uploadedBy User    @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
 
   @@index([filiereId, niveauId, matiereId])
+  @@index([matiereId])
   @@index([uploadedById])
 }
 

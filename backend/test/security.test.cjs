@@ -37,10 +37,10 @@ test('les étudiants ne peuvent pas utiliser les routes de gestion', () => {
 test('le catalogue est filtré par filière côté serveur', async () => {
  let args; const controller=new DocumentsController({document:{findMany:async a=>{args=a;return []}}});
  await controller.list({role:'STUDENT',student:{filiereId:'f1'}},'n1','m1','titre');
- assert.equal(args.where.filiereId,'f1');assert.equal(args.where.niveauId,'n1');assert.equal(args.where.matiereId,'m1');
+ assert.deepEqual(args.where.matiere,{filieres:{some:{id:'f1'}}});assert.equal(args.where.niveauId,'n1');assert.equal(args.where.matiereId,'m1');assert.deepEqual(args.where.title,{contains:'titre',mode:'insensitive'});
 });
 test('un étudiant ne peut pas consulter le fichier d’une autre filière', async () => {
- const controller=new DocumentsController({document:{findUnique:async()=>({filiereId:'other'})}});
+ const controller=new DocumentsController({document:{findUnique:async()=>({matiere:{filieres:[{id:'other'}]}})}});
  await assert.rejects(controller.file('doc',{role:'STUDENT',student:{filiereId:'f1'}},'0',{}),ForbiddenException);
 });
 test('le changement de mot de passe vérifie le mot de passe actuel', async () => {
