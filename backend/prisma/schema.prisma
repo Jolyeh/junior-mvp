@@ -41,6 +41,7 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique @db.VarChar(320)
   passwordHash String
+  tokenVersion Int @default(0)
   role         Role     @default(STUDENT)
   studentId    String?  @unique
   isActive     Boolean  @default(true)
@@ -49,6 +50,7 @@ model User {
 
   student           Student?   @relation(fields: [studentId], references: [id], onDelete: Restrict)
   uploadedDocuments Document[] @relation("DocumentUploader")
+  passwordResets PasswordReset[]
 }
 
 model Filiere {
@@ -108,4 +110,17 @@ model Document {
 
   @@index([filiereId, niveauId, matiereId])
   @@index([uploadedById])
+}
+
+// Un jeton aléatoire est conservé uniquement sous forme de condensat.
+model PasswordReset {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

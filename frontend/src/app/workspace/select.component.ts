@@ -1,0 +1,15 @@
+import { Component, ElementRef, HostListener, forwardRef, input, signal } from '@angular/core';
+import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { LucideAngularModule, ChevronDown, Check } from 'lucide-angular';
+export interface SelectOption { value:string; label:string }
+@Component({ selector:'app-select', standalone:true, imports:[LucideAngularModule], providers:[{provide:NG_VALUE_ACCESSOR,useExisting:forwardRef(()=>SelectComponent),multi:true}], template:`<div class="select-root"><button type="button" class="select-button" [disabled]="disabled" (click)="open.set(!open())" [attr.aria-expanded]="open()" aria-haspopup="listbox"><span [class.placeholder]="!value">{{selectedLabel}}</span><lucide-icon [img]="chevron" size="16"></lucide-icon></button>@if(open()){<div class="select-options" role="listbox" [attr.aria-label]="placeholder()"><button type="button" role="option" [attr.aria-selected]="value === ''" (click)="choose('')">{{placeholder()}}</button>@for(option of options(); track option.value){<button type="button" role="option" [attr.aria-selected]="value === option.value" (click)="choose(option.value)">{{option.label}} @if(value === option.value){<lucide-icon [img]="check" size="15"></lucide-icon>}</button>}</div>}</div>`, styles:[`.select-root{position:relative;width:100%}.select-button{width:100%;height:46px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;border:1px solid #e3e8ed;background:#fff;border-radius:8px;color:#2a3c51;font-size:12px;padding:0 13px}.select-button:focus-visible{outline:3px solid #f5d4bf}.placeholder{color:#98a4b2}.select-options{position:absolute;z-index:15;left:0;right:0;top:calc(100% + 5px);max-height:220px;overflow:auto;background:white;border:1px solid #e6eaee;border-radius:9px;box-shadow:0 12px 30px #17253a1c;padding:5px}.select-options button{background:#fff;color:#526174;border:0;width:100%;display:flex;justify-content:space-between;text-align:left;border-radius:6px;padding:10px;font-size:12px}.select-options button:hover,.select-options button[aria-selected=true]{background:#fff3eb;color:#d27740}`] })
+export class SelectComponent implements ControlValueAccessor {
+ options=input<SelectOption[]>([]); placeholder=input('Sélectionner'); open=signal(false); value=''; disabled=false; chevron=ChevronDown; check=Check;
+ private change:(v:string)=>void=()=>{}; private touched:()=>void=()=>{};
+ constructor(private element:ElementRef) {}
+ get selectedLabel(){return this.options().find(o=>o.value===this.value)?.label || this.placeholder();}
+ writeValue(v:string){this.value=v || '';} registerOnChange(fn:(v:string)=>void){this.change=fn;} registerOnTouched(fn:()=>void){this.touched=fn;} setDisabledState(disabled:boolean){this.disabled=disabled;}
+ choose(value:string){this.value=value;this.change(value);this.touched();this.open.set(false);}
+ @HostListener('document:click',['$event']) close(event:MouseEvent){if(!this.element.nativeElement.contains(event.target))this.open.set(false);}
+ @HostListener('document:keydown.escape') escape(){this.open.set(false);}
+}

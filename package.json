@@ -1,1 +1,22 @@
-{"name":"bibliotheque-universitaire","private":true,"workspaces":["backend","frontend"],"scripts":{"dev:api":"npm run start:dev -w backend","dev:web":"npm run start -w frontend","build":"npm run build -w backend && npm run build -w frontend"}}
+{
+  "name": "bibliotheque-universitaire",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w backend",
+    "dev:web": "npm run start -w frontend",
+    "build": "npm run build -w backend && npm run build -w frontend"
+  },
+  "dependencies": {
+    "rxjs": "7.8.1"
+  },
+  "overrides": {
+    "multer": "^2.5.0",
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
+  }
+}

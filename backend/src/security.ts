@@ -8,12 +8,11 @@ export class JwtAuthGuard implements CanActivate {
     const req = ctx.switchToHttp().getRequest();
     const token = /^Bearer (.+)$/.exec(req.headers.authorization || '')?.[1];
     if (!token) throw new UnauthorizedException();
-    try {
-      const payload = await this.jwt.verifyAsync(token);
-      const user = await this.db.user.findUnique({ where: { id: payload.sub }, include: { student: true } });
-      if (!user || !user.isActive || (user.role === 'STUDENT' && (!user.student || !user.student.isEligible))) throw new Error();
-      req.user = user; return true;
-    } catch { throw new UnauthorizedException(); }
+    let payload: any;
+    try { payload = await this.jwt.verifyAsync(token); } catch { throw new UnauthorizedException(); }
+    const user = await this.db.user.findUnique({ where: { id: payload.sub }, include: { student: true } });
+    if (!user || payload.version !== user.tokenVersion || !user.isActive || (user.role === 'STUDENT' && (!user.student || !user.student.isEligible))) throw new UnauthorizedException();
+    req.user = user; return true;
   }
 }
 @Injectable()

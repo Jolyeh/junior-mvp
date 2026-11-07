@@ -11,7 +11,7 @@ import { CurrentUser, JwtAuthGuard, ManagerGuard } from './security';
 class DocumentDto { @IsString() @MinLength(1) @MaxLength(255) title: string; @IsOptional() @IsString() @MaxLength(5000) description?: string; @IsString() @MinLength(1) filiereId: string; @IsString() @MinLength(1) niveauId: string; @IsString() @MinLength(1) matiereId: string; }
 const directory = join(process.cwd(), 'uploads');
 @Controller('documents') @UseGuards(JwtAuthGuard)
-class DocumentsController {
+export class DocumentsController {
  constructor(private db: PrismaService) {}
  @Get() async list(@CurrentUser() user: any, @Query('niveauId') niveauId?: string, @Query('matiereId') matiereId?: string, @Query('search') search?: string) {
   const docs = await this.db.document.findMany({ where: { ...(user.role === 'STUDENT' ? { filiereId: user.student.filiereId } : {}), ...(niveauId ? { niveauId } : {}), ...(matiereId ? { matiereId } : {}), ...(search ? { title: { contains: search, mode: 'insensitive' } } : {}) }, include: { filiere: true, niveau: true, matiere: true }, orderBy: { createdAt: 'desc' } });
@@ -27,7 +27,7 @@ class DocumentsController {
   const doc = await this.db.document.findUnique({ where: { id } }); if (!doc) throw new NotFoundException();
   if (user.role === 'STUDENT' && user.student.filiereId !== doc.filiereId) throw new ForbiddenException();
   let data: Buffer; try { data = await readFile(join(directory, doc.storageKey)); } catch { throw new NotFoundException('Fichier introuvable'); }
-  res.setHeader('Content-Type', 'application/pdf'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Cache-Control', 'private, no-store'); res.setHeader('Content-Disposition', `${download === '1' ? 'attachment' : 'inline'}; filename="document.pdf"`); res.send(data);
+  res.setHeader('Content-Type', 'application/pdf'); res.setHeader('X-Content-Type-Options', 'nosniff'); res.setHeader('Content-Security-Policy', "sandbox"); res.setHeader('Cache-Control', 'private, no-store'); res.setHeader('Content-Disposition', `${download === '1' ? 'attachment' : 'inline'}; filename="document.pdf"`); res.send(data);
  }
  @Delete(':id') @UseGuards(ManagerGuard) async delete(@Param('id') id: string) { const doc = await this.db.document.delete({ where: { id } }); await unlink(join(directory, doc.storageKey)).catch(() => {}); return { deleted: true }; }
 }
