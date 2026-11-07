@@ -1,0 +1,131 @@
+// Prisma 7 : l'URL PostgreSQL est configurée dans prisma.config.ts,
+// et l'adaptateur PostgreSQL sera fourni à PrismaClient au démarrage.
+generator client {
+  provider = "prisma-client"
+  moduleFormat = "cjs"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  STUDENT
+  MANAGER
+  ADMIN
+}
+
+// Liste préautorisée, importable avant la création d'un compte.
+model Student {
+  id          String   @id @default(cuid())
+  matricule   String   @unique @db.VarChar(100)
+  firstName   String   @db.VarChar(150)
+  lastName    String   @db.VarChar(150)
+  filiereId   String
+  niveauId    String
+  isEligible  Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  filiere Filiere @relation(fields: [filiereId], references: [id], onDelete: Restrict)
+  niveau  Niveau  @relation(fields: [niveauId], references: [id], onDelete: Restrict)
+  user    User?
+
+  @@index([filiereId, niveauId])
+}
+
+// Un compte étudiant est lié à un seul matricule ; un gestionnaire ou un
+// administrateur n'a pas nécessairement d'enregistrement Student.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique @db.VarChar(320)
+  passwordHash String
+  tokenVersion Int @default(0)
+  role         Role     @default(STUDENT)
+  studentId    String?  @unique
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  student           Student?   @relation(fields: [studentId], references: [id], onDelete: Restrict)
+  uploadedDocuments Document[] @relation("DocumentUploader")
+  passwordResets PasswordReset[]
+}
+
+model Filiere {
+  id        String   @id @default(cuid())
+  code      String   @unique @db.VarChar(100)
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students  Student[]
+  documents Document[]
+  matieres  Matiere[]
+}
+
+model Niveau {
+  id        String   @id @default(cuid())
+  code      String   @unique @db.VarChar(100)
+  name      String   @db.VarChar(255)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  students  Student[]
+  documents Document[]
+}
+
+model Matiere {
+  id        String   @id @default(cuid())
+  code      String   @unique @db.VarChar(100)
+  name      String   @db.VarChar(255)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents Document[]
+  filieres  Filiere[]
+}
+
+// La clé de stockage est interne : les fichiers ne doivent pas être exposés
+// comme fichiers statiques publics. Les droits sont vérifiés par le backend.
+model Document {
+  id           String   @id @default(cuid())
+  title        String   @db.VarChar(255)
+  description  String?  @db.Text
+  originalName String   @db.VarChar(255)
+  storageKey   String   @unique
+  mimeType     String   @db.VarChar(255)
+  sizeBytes    BigInt
+  // Ancienne filière conservée pour la reprise ; les nouveaux documents ne la renseignent pas.
+  filiereId    String?
+  // Facultatif en base pour préserver les éventuels documents sans niveau ; requis à l’ajout.
+  niveauId     String?
+  matiereId    String
+  uploadedById String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  filiere    Filiere? @relation(fields: [filiereId], references: [id], onDelete: SetNull)
+  niveau     Niveau?  @relation(fields: [niveauId], references: [id], onDelete: Restrict)
+  matiere    Matiere @relation(fields: [matiereId], references: [id], onDelete: Restrict)
+  uploadedBy User    @relation("DocumentUploader", fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([filiereId, niveauId, matiereId])
+  @@index([matiereId])
+  @@index([uploadedById])
+}
+
+// Un jeton aléatoire est conservé uniquement sous forme de condensat.
+model PasswordReset {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

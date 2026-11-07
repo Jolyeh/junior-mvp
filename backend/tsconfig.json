@@ -1,0 +1,1 @@
+{"compilerOptions":{"module":"commonjs","target":"ES2022","outDir":"dist","rootDir":".","experimentalDecorators":true,"emitDecoratorMetadata":true,"esModuleInterop":true,"skipLibCheck":true,"strict":true,"strictPropertyInitialization":false},"include":["src/**/*.ts","generated/**/*.ts"]}
