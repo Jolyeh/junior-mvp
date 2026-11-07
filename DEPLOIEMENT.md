@@ -44,3 +44,15 @@ Créez le premier administrateur **une seule fois** depuis un environnement sûr
 - Tester l'isolation entre deux filières, les rôles, la limitation des tentatives entre plusieurs instances, les sauvegardes et la restauration.
 - Tester les e-mails de réinitialisation avec un véritable SMTP. Renseigner les informations légales et de confidentialité et remplacer l'URL Open Graph relative par l'URL publique définitive.
 - Un matricule préimporté seul ne prouve pas l'identité d'un étudiant : ajouter une vérification institutionnelle ou un SSO avant d'exposer des documents sensibles. Prévoir audit, surveillance, antivirus, protection XSS, sauvegardes et traitement des actifs abandonnés.
+
+## Création manuelle de l'administrateur via GitHub Actions
+
+Si la connexion PostgreSQL est bloquée sur l'ordinateur local, le workflow `.github/workflows/create-admin.yml` lance le script depuis GitHub Actions. Il ne s'exécute qu'à la demande, sur `main`, après validation et fusion du code. Il écrit dans la **vraie base de production**.
+
+1. Dans GitHub → Settings → Environments, créer ou configurer l'environnement `production` et limiter ses déploiements à la branche `main` ; ajouter une validation obligatoire si le forfait le permet.
+2. Dans les secrets de cet environnement, ajouter `DATABASE_URL` (URI Transaction pooler Supabase complète) et `ADMIN_PASSWORD` (mot de passe administrateur fort, 8 caractères minimum et 72 octets maximum). Ne jamais saisir ces secrets dans les inputs du workflow, les journaux, Git ou la conversation. Utiliser un mot de passe différent de celui de la base.
+3. Après fusion dans `main`, ouvrir Actions → **Créer le premier administrateur** → Run workflow, sélectionner `main`, saisir l'e-mail administrateur et lancer. Le job ne prend aucun secret depuis les entrées manuelles.
+4. Vérifier le résultat. Le script crée un compte, il ne modifie ni ne réinitialise un compte existant ; une adresse déjà utilisée provoque une erreur. En cas de timeout ou d'erreur ambiguë, vérifier si le compte existe avant de relancer.
+5. Supprimer le secret temporaire `ADMIN_PASSWORD` de l'environnement après création et éviter de relancer ce workflow sans nécessité. Conserver `DATABASE_URL` uniquement si une autre tâche GitHub autorisée en a besoin ; sinon le supprimer aussi. Les secrets Vercel sont séparés.
+
+Le workflow utilise des dépendances npm verrouillées et ne fournit les secrets qu'aux étapes qui en ont besoin. Protéger la branche `main`, l'accès aux workflows et l'environnement de production : une personne pouvant modifier le workflow ou exécuter du code avec ces secrets peut accéder à la base.
