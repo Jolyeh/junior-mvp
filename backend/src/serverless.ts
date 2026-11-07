@@ -23,7 +23,12 @@ export function restoreRoute(requestUrl:string):string | null {
 export async function handler(req: Request, res: Response) {
   try {
     const original=restoreRoute(req.url);
-    if(!original){res.status(404).json({statusCode:404,message:'Route introuvable.'});return;}
+    if (!original) {
+      res.statusCode = 404;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ statusCode: 404, message: 'Route introuvable.' }));
+      return;
+    }
     req.url=original;
     ready ??= initialize();
     const serve = await ready;
@@ -31,6 +36,10 @@ export async function handler(req: Request, res: Response) {
   } catch (error) {
     ready = undefined;
     console.error('Échec du démarrage de l’API serverless', error instanceof Error ? error.message : 'erreur inconnue');
-    if (!res.headersSent) res.status(503).json({ statusCode: 503, message: 'Le service est temporairement indisponible.' });
+    if (!res.headersSent) {
+      res.statusCode = 503;
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ statusCode: 503, message: 'Le service est temporairement indisponible.' }));
+    }
   }
 }
