@@ -129,3 +129,28 @@ model PasswordReset {
 
   @@index([userId])
 }
+
+// Autorisation temporaire et à usage unique pour un dépôt direct privé.
+model UploadTicket {
+  id           String   @id @default(cuid())
+  storageKey   String   @unique
+  uploadedById String
+  title        String   @db.VarChar(255)
+  description  String?  @db.Text
+  originalName String   @db.VarChar(255)
+  sizeBytes    BigInt
+  matiereId    String
+  niveauId     String
+  expiresAt    DateTime
+  consumedAt   DateTime?
+  createdAt    DateTime @default(now())
+  @@index([expiresAt])
+}
+
+// Limitation des tentatives partagée entre les instances serverless.
+model RequestLimit {
+  key       String   @id
+  count     Int
+  expiresAt DateTime
+  @@index([expiresAt])
+}

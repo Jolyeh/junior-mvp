@@ -28,7 +28,7 @@ npm ci
 npm start
 ```
 
-Les dépendances sont installées dans `backend/node_modules` et `frontend/node_modules`. Vous pouvez déplacer chaque dossier avec son `package.json`, son `package-lock.json` et ses fichiers. Si la machine, le système ou la version de Node change, réinstallez avec `npm ci` : certains modules (par exemple bcrypt) sont compilés pour leur environnement. Après avoir déplacé le backend, vérifiez son fichier `.env` local et régénérez Prisma si nécessaire. Pour un déplacement en production, transférez et sauvegardez aussi la base PostgreSQL et le dossier privé `backend/uploads`.
+Les dépendances sont installées dans `backend/node_modules` et `frontend/node_modules`. Vous pouvez déplacer chaque dossier avec son `package.json`, son `package-lock.json` et ses fichiers. Si la machine, le système ou la version de Node change, réinstallez avec `npm ci` : certains modules (par exemple bcrypt) sont compilés pour leur environnement. Après avoir déplacé le backend, vérifiez son fichier `.env` local et régénérez Prisma si nécessaire. Pour un déplacement en production, sauvegardez également la base PostgreSQL et les fichiers privés dans Cloudinary.
 
 Depuis la racine uniquement, des raccourcis optionnels restent disponibles : `npm run install:all`, `npm run dev:api`, `npm run dev:web` et `npm run build`. Ils exécutent npm séparément dans chaque projet.
 
@@ -65,7 +65,7 @@ curl -X POST http://localhost:3000/api/auth/login \
   -d '{"email":"admin@exemple.org","password":"votre-mot-de-passe"}'
 ```
 
-Les PDF sont enregistrés dans `backend/uploads` au lancement depuis le workspace backend. Prévoir un stockage privé, persistant et sauvegardé ; ne jamais exposer ce dossier directement.
+Les PDF sont envoyés directement vers Cloudinary en mode authentifié. L’API vérifie la matière, la filière et le contenu avant publication et fournit des liens privés temporaires. Configurez les variables Cloudinary même en développement ; voir `DEPLOIEMENT.md`.
 
 ### Dépannage de PostgreSQL
 
@@ -96,7 +96,7 @@ Prisma télécharge ses moteurs depuis `binaries.prisma.sh` ; ce domaine doit ê
 
 Le gestionnaire crée les filières, niveaux et matières, puis préautorise les matricules. Les étudiants s'inscrivent avec leur matricule. Les documents sont limités aux PDF de 20 Mo. Le contrôle des filières est appliqué côté API, y compris sur le téléchargement direct.
 
-Les imports CSV/XLSX sont réservés aux gestionnaires, transactionnels (tout ou rien), limités à 5 Mo et 5 000 lignes ; les formules et cellules fusionnées Excel sont refusées. Les archives Excel sont également contrôlées après décompression. Utiliser la première feuille avec ces en-têtes :
+Les imports CSV/XLSX sont réservés aux gestionnaires, transactionnels (tout ou rien), limités à 4 Mo et 5 000 lignes ; les formules et cellules fusionnées Excel sont refusées. Les archives Excel sont également contrôlées après décompression. Utiliser la première feuille avec ces en-têtes :
 
 - Filières : `code,name`
 - Matières : `code,name,filiereIds` (identifiants de filières séparés par `|`)
@@ -124,10 +124,14 @@ Les tests backend utilisent une base simulée ; ils ne remplacent pas des tests 
 ## Limites à traiter avant production
 
 - **Un matricule seul ne prouve pas l'identité.** Quelqu'un connaissant celui d'un autre étudiant peut s'inscrire à sa place. Ajouter une vérification via le SSO universitaire ou une adresse institutionnelle vérifiée avant de rendre le service public.
-- Mettre en place HTTPS, une politique de sécurité navigateur, une analyse antivirus des PDF, des sauvegardes, un journal d'audit et une supervision. Les JWT restent en sessionStorage : une protection XSS est indispensable. La limitation des tentatives est en mémoire, par instance ; utiliser un stockage partagé et une limitation réseau pour plusieurs instances.
+- Mettre en place HTTPS, une politique de sécurité navigateur, une analyse antivirus des PDF, des sauvegardes, un journal d'audit et une supervision. Les JWT restent en sessionStorage : une protection XSS est indispensable. La limitation des tentatives d’authentification utilise PostgreSQL entre les instances ; une limitation réseau complémentaire et une supervision restent nécessaires.
 - Les imports de documents non fiables doivent être isolés et surveillés malgré les contrôles de taille. Un document est lié à une matière et à un niveau indicatif, et accessible à toutes les filières associées à la matière ; le niveau permet de filtrer sans restreindre l’accès ; modifier ces associations change immédiatement l’accès à tous les documents de cette matière.
 - Réaliser des tests réels avec PostgreSQL et SMTP et vérifier régulièrement `npm audit` (y compris les dépendances de développement) avant mise en production.
 
 ### Mise à niveau des documents et matières
 
 Le partage des documents par matière nécessite une évolution du schéma. Tous les documents existants deviennent accessibles à toutes les filières associées à leur matière : vérifiez ce partage avant de rouvrir l’accès. Sauvegardez d’abord la base et suivez la procédure « Mise à niveau : matières et filières » dans `backend/README.md`. N’acceptez jamais une réinitialisation de la base existante. La pagination actuelle est réalisée côté navigateur après récupération des données.
+
+### Déploiement Vercel / Supabase / Cloudinary
+
+Voir `DEPLOIEMENT.md` pour la configuration, les prérequis de confidentialité et les vérifications avant ouverture au public.

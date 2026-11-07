@@ -1,0 +1,59 @@
+name: Créer le premier administrateur
+
+on:
+  workflow_dispatch:
+    inputs:
+      admin_email:
+        description: E-mail du nouvel administrateur
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: create-first-admin
+  cancel-in-progress: false
+
+jobs:
+  create-admin:
+    name: Créer le compte administrateur
+    # Seul le code validé et fusionné sur main peut accéder aux secrets de production.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Installer Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Installer les dépendances
+        run: npm ci
+      - name: Générer le client Prisma
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Le secret DATABASE_URL de l'environnement production est manquant." >&2
+            exit 1
+          fi
+          npm run prisma:generate
+      - name: Créer l'administrateur
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_EMAIL: ${{ inputs.admin_email }}
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$ADMIN_PASSWORD" ]; then
+            echo "Les secrets DATABASE_URL et ADMIN_PASSWORD sont nécessaires." >&2
+            exit 1
+          fi
+          npm run admin

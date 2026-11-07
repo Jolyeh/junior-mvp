@@ -6,7 +6,7 @@ import { databaseDiagnostic, databaseErrorKind } from './database-error';
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL est manquante. Configurez-la dans backend/.env.');
-    super({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
+    super({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL, max: 2, idleTimeoutMillis: 10000, connectionTimeoutMillis: 10000 }) });
   }
   async onModuleInit() {
     try {

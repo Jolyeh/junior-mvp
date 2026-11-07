@@ -1,0 +1,11 @@
+const { readFileSync, writeFileSync } = require('node:fs');
+const file = 'dist/browser/index.html';
+const value = process.env.FRONTEND_API_URL;
+if (!value) throw new Error('FRONTEND_API_URL est requise pour le déploiement Vercel.');
+const url = new URL(value);
+if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash || !url.pathname.replace(/\/+$/, '').endsWith('/api')) throw new Error('FRONTEND_API_URL doit être une URL HTTPS publique terminée par /api.');
+const safe = url.href.replace(/\/+$/, '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+const html = readFileSync(file, 'utf8');
+const marker = /name="campus-api-url"\s+content(?:="")?/;
+if (!marker.test(html)) throw new Error('Balise API introuvable.');
+writeFileSync(file, html.replace(marker, `name="campus-api-url" content="${safe}"`));

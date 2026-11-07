@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "ng serve --host 0.0.0.0 --allowed-hosts .e2b.app",
-    "build": "ng build"
+    "build": "ng build",
+    "build:vercel": "ng build && node scripts/configure-api.cjs"
   },
   "dependencies": {
     "@angular/common": "21.2.26",
