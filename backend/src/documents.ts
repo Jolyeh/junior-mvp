@@ -19,6 +19,8 @@ export class DocumentsController {
  }
  @Post() @UseGuards(ManagerGuard) @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 20 * 1024 * 1024 } })) async upload(@CurrentUser() user: any, @Body() dto: DocumentDto, @UploadedFile() file: Express.Multer.File) {
   if (!file || !file.buffer.subarray(0, 5).equals(Buffer.from('%PDF-')) || !/\.pdf$/i.test(file.originalname)) throw new BadRequestException('Seuls les fichiers PDF sont acceptés (20 Mo maximum)');
+  const associated = await this.db.matiere.findFirst({where:{id:dto.matiereId,filieres:{some:{id:dto.filiereId}}},select:{id:true}});
+  if(!associated) throw new BadRequestException('Cette matière n’est pas associée à la filière sélectionnée.');
   const key = randomUUID() + '.pdf'; await mkdir(directory, { recursive: true }); await writeFile(join(directory, key), file.buffer, { flag: 'wx' });
   try { const doc = await this.db.document.create({ data: { ...dto, storageKey: key, originalName: file.originalname.slice(0,255), mimeType: 'application/pdf', sizeBytes: BigInt(file.size), uploadedById: user.id } }); return { id: doc.id }; }
   catch (e) { await unlink(join(directory, key)).catch(() => {}); throw e; }

@@ -1,7 +1,7 @@
 import { API_BASE_URL } from './api-config';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-export interface Category { id: string; code: string; name: string; }
+export interface Category { id: string; code: string; name: string; filieres?: {id:string;name:string}[]; }
 export interface DocumentItem { id: string; title: string; description?: string; sizeBytes: number; createdAt: string; filiere: Category; niveau: Category; matiere: Category; }
 @Injectable({providedIn:'root'})
 export class LibraryService {

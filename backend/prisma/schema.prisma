@@ -62,6 +62,7 @@ model Filiere {
 
   students  Student[]
   documents Document[]
+  matieres  Matiere[]
 }
 
 model Niveau {
@@ -84,6 +85,7 @@ model Matiere {
   updatedAt DateTime @updatedAt
 
   documents Document[]
+  filieres  Filiere[]
 }
 
 // La clé de stockage est interne : les fichiers ne doivent pas être exposés

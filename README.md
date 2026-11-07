@@ -126,3 +126,7 @@ Les tests backend utilisent une base simulée ; ils ne remplacent pas des tests 
 - Mettre en place HTTPS, une politique de sécurité navigateur, une analyse antivirus des PDF, des sauvegardes, un journal d'audit et une supervision. Les JWT restent en sessionStorage : une protection XSS est indispensable. La limitation des tentatives est en mémoire, par instance ; utiliser un stockage partagé et une limitation réseau pour plusieurs instances.
 - Les imports de documents non fiables doivent être isolés et surveillés malgré les contrôles de taille. Les niveaux et matières ne sont pas liés à une filière dans le modèle validé ; chaque document, lui, est lié à une seule filière.
 - Réaliser des tests réels avec PostgreSQL et SMTP et vérifier régulièrement `npm audit` (y compris les dépendances de développement) avant mise en production.
+
+### Mise à niveau des matières
+
+La nouvelle association entre matières et filières nécessite une évolution du schéma et la reprise des associations des documents existants. Sauvegardez d’abord la base et suivez la procédure « Mise à niveau : matières et filières » dans `backend/README.md`. N’acceptez jamais une réinitialisation de la base existante. La pagination actuelle est réalisée côté navigateur après récupération des données.
