@@ -15,4 +15,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   await app.listen(process.env.PORT || 3000, '0.0.0.0');
 }
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error('Échec du démarrage de l’API :', error instanceof Error ? error.message : 'Erreur inconnue.');
+  process.exitCode = 1;
+});

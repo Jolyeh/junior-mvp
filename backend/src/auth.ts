@@ -59,7 +59,7 @@ export class AuthService {
   await this.db.$transaction([this.db.passwordReset.updateMany({ where: { userId: user.id, usedAt: null }, data: { usedAt: new Date() } }), this.db.passwordReset.create({ data: { userId: user.id, tokenHash: digest(raw), expiresAt } })]);
   const link = new URL('/reset-password', frontend); link.searchParams.set('token', raw);
   const transport = nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT || 587), secure: process.env.SMTP_SECURE === 'true', auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS ?? process.env.SMTP_PASSWORD ?? '' } : undefined });
-  try { await transport.sendMail({ from: process.env.SMTP_FROM, to: user.email, subject: 'Réinitialisation de votre mot de passe Campus', text: `Bonjour,\n\nPour choisir un nouveau mot de passe, ouvrez ce lien : ${link.toString()}\n\nCe lien est valable 30 minutes et utilisable une seule fois. Si vous n’avez pas fait cette demande, ignorez cet e-mail.` }); }
+  try { await transport.sendMail({ from: process.env.SMTP_FROM, to: user.email, subject: 'Réinitialisation de votre mot de passe ESM BÉNIN', text: `Bonjour,\n\nPour choisir un nouveau mot de passe, ouvrez ce lien : ${link.toString()}\n\nCe lien est valable 30 minutes et utilisable une seule fois. Si vous n’avez pas fait cette demande, ignorez cet e-mail.` }); }
   catch { this.logger.error('Échec de l’envoi du courriel de réinitialisation. Vérifiez la configuration SMTP.'); }
   return generic;
  }

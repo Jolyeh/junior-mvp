@@ -42,5 +42,12 @@
     "prisma": "^7.0.0",
     "tsx": "^4.23.15",
     "typescript": "^5.8.0"
+  },
+  "private": true,
+  "overrides": {
+    "multer": "^2.5.0",
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
   }
 }

@@ -6,7 +6,7 @@ import { FeedbackService } from './feedback.service';
 export class AppComponent {
  feedback=inject(FeedbackService); icons={X,CheckCircle2,AlertCircle,AlertTriangle};
  private previousFocus: HTMLElement | null = null;
- constructor(){ effect(()=>{ const dialog=this.feedback.confirmation(); if(dialog){this.previousFocus=document.activeElement as HTMLElement;setTimeout(()=>document.querySelector<HTMLElement>('.confirm-dialog button')?.focus());}else if(this.previousFocus){this.previousFocus.focus();this.previousFocus=null;} }); }
+ constructor(){ effect(()=>{ const dialog=this.feedback.confirmation(); if(dialog){this.previousFocus=this.feedback.confirmationTrigger;setTimeout(()=>document.querySelector<HTMLElement>('.confirm-dialog button')?.focus());}else if(this.previousFocus){const trigger=this.previousFocus;this.previousFocus=null;setTimeout(()=>{if(trigger.isConnected)trigger.focus();});} }); }
  @HostListener('document:keydown', ['$event']) onKeydown(event: KeyboardEvent){
   if(!this.feedback.confirmation())return;
   if(event.key==='Escape'){event.preventDefault();this.feedback.confirmation.set(null);return;}

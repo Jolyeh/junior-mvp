@@ -1,23 +1,36 @@
-# Campus — bibliothèque numérique universitaire
+# ESM BÉNIN — bibliothèque numérique universitaire
 
 Application Angular 21 / NestJS 11 / Prisma 7 / PostgreSQL. Sans Docker ni proxy de développement. Les étudiants accèdent à un catalogue filtré par filière et à leur profil ; les gestionnaires disposent d'une administration distincte.
 
 ## Installation locale
 
-Prérequis : Node.js 22.12 ou supérieur compatible avec Prisma 7 et Angular 21, npm et PostgreSQL installé et démarré. Créez la base PostgreSQL et son utilisateur. Depuis la **racine du dépôt** :
+Prérequis : Node.js 22.12 ou supérieur compatible avec Prisma 7 et Angular 21, npm et PostgreSQL installé et démarré. Créez la base PostgreSQL et son utilisateur. **Chaque projet est indépendant** : ses dépendances et son `package-lock.json` se trouvent dans son propre dossier. Ne lancez pas `npm ci` à la racine.
+
+Dans un premier terminal, installez et démarrez le backend :
 
 ```sh
+cd backend
 npm ci
-cp backend/.env.example backend/.env
-# Modifier DATABASE_URL, JWT_SECRET, ADMIN_EMAIL et ADMIN_PASSWORD dans backend/.env.
+cp .env.example .env
+# Modifier DATABASE_URL, JWT_SECRET, ADMIN_EMAIL et ADMIN_PASSWORD dans .env.
 # JWT_SECRET : clé aléatoire unique d'au moins 32 caractères.
-npm run prisma:generate -w backend
-npm run prisma:migrate -w backend -- --name init
-npm run admin -w backend  # une seule fois pour créer le premier administrateur
-npm run dev:api
-# Dans un second terminal, toujours à la racine :
-npm run dev:web
+npm run prisma:generate
+npm run prisma:migrate -- --name init
+npm run admin  # une seule fois pour créer le premier administrateur
+npm run start:dev
 ```
+
+Dans un second terminal, installez et démarrez le frontend :
+
+```sh
+cd frontend
+npm ci
+npm start
+```
+
+Les dépendances sont installées dans `backend/node_modules` et `frontend/node_modules`. Vous pouvez déplacer chaque dossier avec son `package.json`, son `package-lock.json` et ses fichiers. Si la machine, le système ou la version de Node change, réinstallez avec `npm ci` : certains modules (par exemple bcrypt) sont compilés pour leur environnement. Après avoir déplacé le backend, vérifiez son fichier `.env` local et régénérez Prisma si nécessaire. Pour un déplacement en production, transférez et sauvegardez aussi la base PostgreSQL et le dossier privé `backend/uploads`.
+
+Depuis la racine uniquement, des raccourcis optionnels restent disponibles : `npm run install:all`, `npm run dev:api`, `npm run dev:web` et `npm run build`. Ils exécutent npm séparément dans chaque projet.
 
 Ouvrir http://localhost:4200. La création de l'administrateur lit ses identifiants depuis `backend/.env` ; les renseigner ne crée pas automatiquement le compte. Modifier `ADMIN_PASSWORD` après sa création ne modifie pas le mot de passe en base. Un compte existant peut changer son mot de passe depuis son profil.
 
@@ -28,7 +41,8 @@ Ouvrir http://localhost:4200. La création de l'administrateur lit ses identifia
 Cette version ajoute `User.tokenVersion` et la table `PasswordReset`. Sauvegardez d'abord la base. Pour une base de développement existante, après avoir configuré `backend/.env` et régénéré le client, appliquez le schéma avec :
 
 ```sh
-npm exec -w backend -- prisma db push
+cd backend
+npx prisma db push
 ```
 
 Vérifiez le plan affiché et **n'acceptez pas de perte de données**. Les anciens jetons seront invalidés : reconnectez-vous. Si vous gérez déjà des migrations Prisma, créez une migration compatible avec votre historique plutôt que d'effacer la base. Aucune migration initiale versionnée n'est fournie ici ; établissez une baseline et des migrations revues avant tout déploiement en production.
@@ -53,18 +67,30 @@ curl -X POST http://localhost:3000/api/auth/login \
 
 Les PDF sont enregistrés dans `backend/uploads` au lancement depuis le workspace backend. Prévoir un stockage privé, persistant et sauvegardé ; ne jamais exposer ce dossier directement.
 
+### Dépannage de PostgreSQL
+
+`Authentication failed against the database server` signifie que PostgreSQL refuse les identifiants de **DATABASE_URL** dans `backend/.env`. Ce ne sont pas l'e-mail et le mot de passe du compte ESM BÉNIN. L'API vérifie désormais la connexion au démarrage et indique le problème sans afficher les secrets.
+
+1. Vérifiez que PostgreSQL fonctionne et que la base et l'utilisateur indiqués dans `.env` existent.
+2. Vérifiez le nom d'utilisateur, le mot de passe, l'hôte, le port et la base dans `DATABASE_URL`. Remplacez les valeurs d'exemple par celles de votre installation ; ne publiez pas ce fichier.
+3. Dans l'URL, encodez les caractères spéciaux du mot de passe : `@` devient `%40`, `%` devient `%25` et `#` devient `%23`. L'encodage ne modifie pas le mot de passe PostgreSQL lui-même.
+4. Pour vérifier indépendamment de l'application, utilisez `psql -h localhost -p 5432 -U NOM_UTILISATEUR -d bibliotheque -W` en remplaçant le nom et la base par les valeurs de votre configuration. Le mot de passe sera demandé sans être écrit dans la commande. Si cette connexion échoue, corrigez les identifiants ou les droits PostgreSQL avant de redémarrer l'API.
+
+Si la connexion PostgreSQL fonctionne mais que des tables ou colonnes manquent, consultez la section « Mise à jour d'une base existante » et sauvegardez d'abord vos données.
+
 ### Dépannage des dépendances
 
-Si `Cannot find module 'rxjs'` apparaît, arrêtez les serveurs et, depuis la racine :
+Si `Cannot find module 'rxjs'` apparaît, arrêtez les serveurs et réinstallez **dans le projet concerné**, sans supprimer l'autre :
 
 ```sh
-rm -rf node_modules backend/node_modules frontend/node_modules
+# Depuis backend (ou frontend pour l'interface)
+rm -rf node_modules
 npm ci
-npm run prisma:generate -w backend
-npm run dev:api
+# Dans backend uniquement :
+npm run prisma:generate
 ```
 
-Prisma télécharge ses moteurs depuis `binaries.prisma.sh` ; ce domaine doit être accessible. La génération doit réussir avant la compilation du backend. `npm ci` utilise le fichier de verrouillage du monorepo : ne pas installer les dépendances séparément dans les workspaces.
+Prisma télécharge ses moteurs depuis `binaries.prisma.sh` ; ce domaine doit être accessible. La génération doit réussir avant la compilation du backend. Chaque dossier a son propre fichier `package-lock.json`.
 
 ## Gestion et import/export
 
@@ -83,9 +109,12 @@ Les identifiants nécessaires à l'import des étudiants sont affichés dans les
 Après génération Prisma :
 
 ```sh
-npm run build -w backend
-npm test -w backend
-npm run build -w frontend
+cd backend
+npm run build
+npm test
+npm audit --omit=dev
+cd ../frontend
+npm run build
 npm audit --omit=dev
 ```
 

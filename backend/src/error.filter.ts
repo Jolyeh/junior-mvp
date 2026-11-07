@@ -1,11 +1,14 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { Response } from 'express';
+import { databaseDiagnostic, databaseErrorKind } from './database-error';
 @Catch()
 export class ErrorFilter implements ExceptionFilter {
  private readonly logger = new Logger(ErrorFilter.name);
  catch(exception: any, host: ArgumentsHost) {
   const response = host.switchToHttp().getResponse<Response>();
   if (exception instanceof HttpException) { const status=exception.getStatus(); const body=exception.getResponse(); response.status(status).json(typeof body === 'string' ? {statusCode:status,message:body} : body); return; }
+  const dbError = databaseErrorKind(exception);
+  if (dbError) { this.logger.error(databaseDiagnostic(dbError)); response.status(503).json({statusCode:503,message:'Le service de données est indisponible. Veuillez contacter l’établissement.'}); return; }
   const known:Record<string,[number,string]> = {
    P2002:[409,'Cette valeur existe déjà. Vérifiez les données uniques (code, matricule ou e-mail).'],
    P2003:[409,'Cette donnée est utilisée ou la catégorie sélectionnée n’existe plus.'],
