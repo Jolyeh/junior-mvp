@@ -21,9 +21,8 @@ test('les matières visibles par un étudiant correspondent à sa filière',asyn
  assert.deepEqual(query.where,{filieres:{some:{id:'f1'}}});
 });
 test('un document ne peut pas utiliser une matière sans filière',async()=>{
- let wrote=false;const db={matiere:{findFirst:async()=>null},document:{create:async()=>{wrote=true}}};
- const file={buffer:Buffer.from('%PDF-1.4'),originalname:'test.pdf',size:8};
- await assert.rejects(new DocumentsController(db).upload({id:'admin'},{title:'T',matiereId:'m1',niveauId:'n1'},file),BadRequestException);assert.equal(wrote,false);
+ const db={matiere:{findFirst:async()=>null}};
+ await assert.rejects(new DocumentsController(db,{}).intent({id:'admin'},{title:'T',matiereId:'m1',niveauId:'n1',originalName:'test.pdf',sizeBytes:8}),BadRequestException);
 });
 test('import CSV matières accepte plusieurs filières séparées par une barre verticale',async()=>{
  const saved=[];const db={matiere:{create:({data})=>{saved.push(data);return Promise.resolve(data)}},$transaction:async t=>Promise.all(t)};

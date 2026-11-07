@@ -34,8 +34,8 @@ export class ManagementController {
  @Post(':type') create(@Param('type') type: string, @Body() body: Record<string, unknown>) { const data=this.clean(type,body); return this.model(type).create({ data:type==='matieres'?this.relationData(data,'connect'):data }); }
  @Patch(':type/:id') async update(@Param('type') type: string, @Param('id') id: string, @Body() body: Record<string, unknown>) { const data=this.clean(type,body); return this.model(type).update({ where: { id }, data:type==='matieres'?this.relationData(data,'set'):data }); }
  @Delete(':type/:id') async delete(@Param('type') type: string, @Param('id') id: string) { if(type==='filieres' && await this.db.matiere.count({where:{filieres:{some:{id}}}})) throw new BadRequestException('Cette filière est associée à des matières. Modifiez d’abord ces associations.'); return this.model(type).delete({ where: { id } }); }
- @Post(':type/import') @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } })) async import(@Param('type') type: string, @UploadedFile() file: Express.Multer.File) {
-  const model = this.model(type); if (!file || !/\.(csv|xlsx)$/i.test(file.originalname)) throw new BadRequestException('Choisissez un fichier CSV ou XLSX de 5 Mo maximum.');
+ @Post(':type/import') @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 4 * 1024 * 1024 } })) async import(@Param('type') type: string, @UploadedFile() file: Express.Multer.File) {
+  const model = this.model(type); if (!file || !/\.(csv|xlsx)$/i.test(file.originalname)) throw new BadRequestException('Choisissez un fichier CSV ou XLSX de 4 Mo maximum.');
   let rows: any[] = [];
   if (/\.csv$/i.test(file.originalname)) {
    const parsed = Papa.parse<Record<string,string>>(file.buffer.toString('utf8'), { header: true, skipEmptyLines: 'greedy', transformHeader: h => h.trim() });
@@ -64,4 +64,4 @@ export class ManagementController {
   res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); res.send(Buffer.from(await workbook.xlsx.writeBuffer()));
  }
 }
-@Module({ imports: [AuthModule], controllers: [AcademicController, ManagementController], providers: [PrismaService, JwtAuthGuard, ManagerGuard] }) export class AcademicModule {}
+@Module({ imports: [AuthModule], controllers: [AcademicController, ManagementController], providers: [JwtAuthGuard, ManagerGuard] }) export class AcademicModule {}

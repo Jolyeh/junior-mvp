@@ -1,0 +1,33 @@
+-- Initialisation d'une base Supabase vide uniquement. À appliquer une seule fois.
+CREATE TYPE "Role" AS ENUM ('STUDENT', 'MANAGER', 'ADMIN');
+CREATE TABLE "Filiere" ("id" TEXT PRIMARY KEY, "code" VARCHAR(100) NOT NULL UNIQUE, "name" VARCHAR(255) NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "Niveau" ("id" TEXT PRIMARY KEY, "code" VARCHAR(100) NOT NULL UNIQUE, "name" VARCHAR(255) NOT NULL, "sortOrder" INTEGER NOT NULL DEFAULT 0, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "Matiere" ("id" TEXT PRIMARY KEY, "code" VARCHAR(100) NOT NULL UNIQUE, "name" VARCHAR(255) NOT NULL, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "Student" ("id" TEXT PRIMARY KEY, "matricule" VARCHAR(100) NOT NULL UNIQUE, "firstName" VARCHAR(150) NOT NULL, "lastName" VARCHAR(150) NOT NULL, "filiereId" TEXT NOT NULL REFERENCES "Filiere"("id") ON DELETE RESTRICT ON UPDATE CASCADE, "niveauId" TEXT NOT NULL REFERENCES "Niveau"("id") ON DELETE RESTRICT ON UPDATE CASCADE, "isEligible" BOOLEAN NOT NULL DEFAULT TRUE, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "User" ("id" TEXT PRIMARY KEY, "email" VARCHAR(320) NOT NULL UNIQUE, "passwordHash" TEXT NOT NULL, "tokenVersion" INTEGER NOT NULL DEFAULT 0, "role" "Role" NOT NULL DEFAULT 'STUDENT', "studentId" TEXT UNIQUE REFERENCES "Student"("id") ON DELETE RESTRICT ON UPDATE CASCADE, "isActive" BOOLEAN NOT NULL DEFAULT TRUE, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "Document" ("id" TEXT PRIMARY KEY, "title" VARCHAR(255) NOT NULL, "description" TEXT, "originalName" VARCHAR(255) NOT NULL, "storageKey" TEXT NOT NULL UNIQUE, "mimeType" VARCHAR(255) NOT NULL, "sizeBytes" BIGINT NOT NULL, "filiereId" TEXT REFERENCES "Filiere"("id") ON DELETE SET NULL ON UPDATE CASCADE, "niveauId" TEXT REFERENCES "Niveau"("id") ON DELETE RESTRICT ON UPDATE CASCADE, "matiereId" TEXT NOT NULL REFERENCES "Matiere"("id") ON DELETE RESTRICT ON UPDATE CASCADE, "uploadedById" TEXT NOT NULL REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE, "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" TIMESTAMP(3) NOT NULL);
+CREATE TABLE "PasswordReset" ("id" TEXT PRIMARY KEY, "tokenHash" TEXT NOT NULL UNIQUE, "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE, "expiresAt" TIMESTAMP(3) NOT NULL, "usedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE "_FiliereToMatiere" ("A" TEXT NOT NULL REFERENCES "Filiere"("id") ON DELETE CASCADE ON UPDATE CASCADE, "B" TEXT NOT NULL REFERENCES "Matiere"("id") ON DELETE CASCADE ON UPDATE CASCADE, PRIMARY KEY ("A", "B"));
+CREATE TABLE "UploadTicket" ("id" TEXT PRIMARY KEY, "storageKey" TEXT NOT NULL UNIQUE, "uploadedById" TEXT NOT NULL, "title" VARCHAR(255) NOT NULL, "description" TEXT, "originalName" VARCHAR(255) NOT NULL, "sizeBytes" BIGINT NOT NULL, "matiereId" TEXT NOT NULL, "niveauId" TEXT NOT NULL, "expiresAt" TIMESTAMP(3) NOT NULL, "consumedAt" TIMESTAMP(3), "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE INDEX "Student_filiereId_niveauId_idx" ON "Student"("filiereId", "niveauId");
+CREATE INDEX "Document_filiereId_niveauId_matiereId_idx" ON "Document"("filiereId", "niveauId", "matiereId");
+CREATE INDEX "Document_matiereId_idx" ON "Document"("matiereId");
+CREATE INDEX "Document_uploadedById_idx" ON "Document"("uploadedById");
+CREATE INDEX "PasswordReset_userId_idx" ON "PasswordReset"("userId");
+CREATE INDEX "_FiliereToMatiere_B_index" ON "_FiliereToMatiere"("B");
+CREATE INDEX "UploadTicket_expiresAt_idx" ON "UploadTicket"("expiresAt");
+-- Accès exclusivement via le backend PostgreSQL : pas d'accès direct PostgREST.
+ALTER TABLE "Filiere" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Niveau" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Matiere" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Student" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "User" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Document" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "PasswordReset" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "_FiliereToMatiere" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "UploadTicket" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON "Filiere", "Niveau", "Matiere", "Student", "User", "Document", "PasswordReset", "_FiliereToMatiere", "UploadTicket" FROM anon, authenticated;
+CREATE TABLE "RequestLimit" ("key" TEXT PRIMARY KEY, "count" INTEGER NOT NULL, "expiresAt" TIMESTAMP(3) NOT NULL);
+CREATE INDEX "RequestLimit_expiresAt_idx" ON "RequestLimit"("expiresAt");
+ALTER TABLE "RequestLimit" ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON "RequestLimit" FROM anon, authenticated;
