@@ -2,5 +2,5 @@
   "env": { "NODEJS_HELPERS": "0" },
   "buildCommand": "npm run build:vercel",
   "functions": { "api/index.js": { "includeFiles": "dist/**" } },
-  "rewrites": [{ "source": "/api/:path*", "destination": "/api/index" }]
+  "rewrites": [{ "source": "/api/:path*", "destination": "/api/index?__route=:path*" }]
 }

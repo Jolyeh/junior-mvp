@@ -11,8 +11,20 @@ async function initialize() {
   await app.init();
   return app.getHttpAdapter().getInstance() as (req: Request, res: Response) => void;
 }
+// Vercel rewrites target the function path; restore the captured API path.
+export function restoreRoute(requestUrl:string):string | null {
+  const url=new URL(requestUrl,'http://localhost');
+  if(url.pathname!=='/api/index')return requestUrl;
+  const route=url.searchParams.get('__route');
+  if(!route || !/^[a-zA-Z0-9_\/-]+$/.test(route))return null;
+  url.searchParams.delete('__route');
+  return `/api/${route}${url.search}`;
+}
 export async function handler(req: Request, res: Response) {
   try {
+    const original=restoreRoute(req.url);
+    if(!original){res.status(404).json({statusCode:404,message:'Route introuvable.'});return;}
+    req.url=original;
     ready ??= initialize();
     const serve = await ready;
     serve(req, res);
