@@ -1,1 +1,57 @@
-{"version":1,"projects":{"frontend":{"projectType":"application","root":"","sourceRoot":"src","architect":{"build":{"builder":"@angular-devkit/build-angular:application","options":{"outputPath":"dist","index":"src/index.html","browser":"src/main.ts","polyfills":["zone.js"],"tsConfig":"tsconfig.app.json","styles":["src/styles.scss"]},"configurations":{"production":{"optimization":true,"outputHashing":"all","budgets":[{"type":"initial","maximumWarning":"1mb","maximumError":"2mb"}]},"development":{"optimization":false,"sourceMap":true}},"defaultConfiguration":"production"},"serve":{"builder":"@angular-devkit/build-angular:dev-server","configurations":{"development":{"buildTarget":"frontend:build:development"}},"defaultConfiguration":"development"}}}}}
+{
+  "version": 1,
+  "projects": {
+    "frontend": {
+      "projectType": "application",
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "tsconfig.app.json",
+            "styles": [
+              "src/styles.scss"
+            ],
+            "assets": [
+              "src/assets"
+            ]
+          },
+          "configurations": {
+            "production": {
+              "optimization": true,
+              "outputHashing": "all",
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "1mb",
+                  "maximumError": "2mb"
+                }
+              ]
+            },
+            "development": {
+              "optimization": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "development": {
+              "buildTarget": "frontend:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    }
+  }
+}

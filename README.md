@@ -4,23 +4,35 @@ Monorepo Angular 19 / NestJS 11 / Prisma 7 / PostgreSQL. L'interface est respons
 
 ## Démarrage local
 
-Prérequis : Node.js 22.12+ (ou une version compatible avec Prisma 7), npm, Docker et Docker Compose. Prisma télécharge ses moteurs depuis `binaries.prisma.sh` : ce domaine doit être accessible pendant l'installation et les commandes Prisma.
+Prérequis : Node.js 22.12+ (ou une version compatible avec Prisma 7), npm et PostgreSQL installé et démarré localement. Créez la base `bibliotheque` et l'utilisateur PostgreSQL, puis vérifiez les identifiants et le port dans `backend/.env`. Prisma télécharge ses moteurs depuis `binaries.prisma.sh` : ce domaine doit être accessible pendant l'installation et les commandes Prisma.
 
 ```sh
 npm install
-docker compose up -d
 cp backend/.env.example backend/.env
-# Modifier JWT_SECRET : au moins 32 caractères aléatoires
+# Adapter DATABASE_URL et remplacer JWT_SECRET par une clé aléatoire d'au moins 32 caractères.
 npm run prisma:generate -w backend
 npm run prisma:migrate -w backend -- --name init
-# Créer le premier administrateur (utiliser un mot de passe fort et unique)
-ADMIN_EMAIL=admin@exemple.org ADMIN_PASSWORD='votre-mot-de-passe-fort' npm run admin -w backend
+# ADMIN_EMAIL et ADMIN_PASSWORD sont lus depuis backend/.env.
+# Cette commande crée le compte : les variables seules ne le créent pas.
+npm run admin -w backend
 npm run dev:api
 # Dans un autre terminal
 npm run dev:web
 ```
 
-Ouvrir http://localhost:4200. Le serveur Angular transmet `/api` à NestJS sur le port 3000. En production, configurer un proxy inverse HTTPS servant le frontend et transférant `/api` vers le backend. Les fichiers sont enregistrés dans `backend/uploads` au lancement depuis le workspace backend : prévoir un volume privé, persistant et sauvegardé. Ne jamais exposer ce dossier directement.
+Ouvrir http://localhost:4200 et utiliser le formulaire « Se connecter ». L'application appelle directement l'API sur le même hôte, port 3000, sans proxy. Pour un autre hébergement, renseigner l'URL complète de l'API (y compris `/api`) dans la balise `campus-api-url` de `frontend/src/index.html`, par exemple `https://api.exemple.org/api`. Après modification, reconstruire le frontend. Dans `backend/.env`, indiquer les origines exactes autorisées à appeler l'API dans `FRONTEND_ORIGINS`, séparées par des virgules, par exemple `https://campus.exemple.org`. Redémarrer l'API après modification. En production, utiliser HTTPS pour les deux services.
+
+La route `/api/auth/login` accepte uniquement **POST**, pas GET : saisir son URL dans un navigateur provoque donc `Cannot GET /api/auth/login`. Pour tester l'API directement :
+
+```sh
+curl -X POST http://localhost:3000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@exemple.org","password":"votre-mot-de-passe"}'
+```
+
+Utiliser l'adresse et le mot de passe du compte effectivement créé avec `npm run admin -w backend`. Cette commande est à exécuter une seule fois par adresse. Si le compte existe déjà, changer `ADMIN_PASSWORD` dans `.env` ne modifie pas son mot de passe dans la base.
+
+Les fichiers sont enregistrés dans `backend/uploads` au lancement depuis le workspace backend : prévoir un stockage privé, persistant et sauvegardé. Ne jamais exposer ce dossier directement.
 
 ## Utilisation
 

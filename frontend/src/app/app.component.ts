@@ -5,9 +5,10 @@ import { LucideAngularModule, BookOpen, LayoutDashboard, Library, GraduationCap,
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { AuthService } from './auth.service';
+import { LandingComponent } from './landing/landing.component';
 import { Category, DocumentItem, LibraryService } from './library.service';
 gsap.registerPlugin(ScrollTrigger);
-@Component({ selector:'app-root', standalone:true, imports:[CommonModule, FormsModule, LucideAngularModule], templateUrl:'./app.component.html', styleUrl:'./app.component.scss' })
+@Component({ selector:'app-root', standalone:true, imports:[CommonModule, FormsModule, LucideAngularModule, LandingComponent], templateUrl:'./app.component.html', styleUrl:'./app.component.scss' })
 export class AppComponent implements AfterViewInit {
  readonly icons = { BookOpen, LayoutDashboard, Library, GraduationCap, Users, Settings, Search, Bell, ChevronDown, ChevronRight, ArrowRight, ArrowUpRight, Download, Eye, FileText, Plus, SlidersHorizontal, LogOut, X, Upload, ShieldCheck, BookMarked, Layers, Trash2, Pencil, Menu };
  auth = inject(AuthService); api = inject(LibraryService);

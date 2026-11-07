@@ -1,4 +1,5 @@
-<div class="app-shell">
+<app-landing *ngIf="!auth.user()" (login)="modal.set('login'); error.set('')" (register)="modal.set('register'); error.set('')"></app-landing>
+<div class="app-shell" *ngIf="auth.user()">
   <aside class="sidebar" [class.mobile-open]="menuOpen()">
     <div class="brand"><div class="brand-icon"><lucide-icon [img]="icons.BookOpen" size="22"></lucide-icon></div><div><strong>campus<span>.</span></strong><small>BIBLIOTHÈQUE NUMÉRIQUE</small></div></div>
     <div class="sidebar-label">ESPACE DE TRAVAIL</div>
